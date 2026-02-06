@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avendus Capital - Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background: #f8fafc;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .admin-sidebar {
+            width: 280px;
+            background: #1e293b;
+            color: white;
+            height: 100vh;
+            position: fixed;
+            padding: 2rem 1rem;
+        }
+
+        .admin-main {
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        .sidebar-link {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: 0.3s;
+        }
+
+        .sidebar-link:hover,
+        .sidebar-link.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .admin-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 2px solid #f1f5f9;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            color: #1e293b;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .status-pending {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .edit-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-box {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            width: 400px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-box">
+            <h2 style="margin-bottom: 1.5rem;">Admin Login</h2>
+            <input type="text" id="adminUser" placeholder="Username"
+                style="width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <input type="password" id="adminPass" placeholder="Password"
+                style="width: 100%; padding: 0.8rem; margin-bottom: 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <button onclick="handleLogin()"
+                style="width: 100%; padding: 1rem; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Access
+                Dashboard</button>
+        </div>
+    </div>
+
+    <div class="admin-sidebar">
+        <h2 style="margin-bottom: 2rem; padding: 0 1rem;">Admin Panel</h2>
+        <a href="#" class="sidebar-link active" onclick="showSection('users')"><i data-lucide="users"></i> User
+            Management</a>
+        <a href="#" class="sidebar-link" onclick="showSection('messages')"><i data-lucide="message-square"></i>
+            Messages</a>
+        <a href="index.html" class="sidebar-link"><i data-lucide="globe"></i> View Site</a>
+    </div>
+
+    <div class="admin-main">
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1>Dashboard</h1>
+            <div style="font-weight: 600; color: #64748b;" id="adminName">Welcome, Admin</div>
+        </header>
+
+        <section id="usersSection">
+            <div class="admin-card">
+                <h3 style="margin-bottom: 1rem;">Registered Users</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Mobile</th>
+                                <th>Username</th>
+                                <th>KYC</th>
+                                <th>Balance</th>
+                                <th>Invested</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <!-- JS populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="messagesSection" style="display: none;">
+            <div class="admin-card">
+                <h3 style="margin-bottom: 1rem;">Customer Messages</h3>
+                <div id="messageList">
+                    <!-- JS populated -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function handleLogin() {
+            const username = document.getElementById('adminUser').value;
+            const password = document.getElementById('adminPass').value;
+
+            fetch('admin_api.php?action=adminLogin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('loginOverlay').style.display = 'none';
+                        loadData();
+                    } else {
+                        alert(data.message);
+                    }
+                });
+        }
+
+        function showSection(section) {
+            document.getElementById('usersSection').style.display = section === 'users' ? 'block' : 'none';
+            document.getElementById('messagesSection').style.display = section === 'messages' ? 'block' : 'none';
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+            event.target.closest('.sidebar-link').classList.add('active');
+        }
+
+        function loadData() {
+            fetch('admin_api.php?action=getUsers')
+                .then(res => res.json())
+                .then(users => {
+                    const body = document.getElementById('userTableBody');
+                    body.innerHTML = users.map(u => `
+                        <tr>
+                            <td>${u.id}</td>
+                            <td>${u.mobile}</td>
+                            <td>${u.username}</td>
+                            <td><span class="status-badge status-pending">${u.kyc}</span></td>
+                            <td>₹${parseFloat(u.balance).toLocaleString()}</td>
+                            <td>₹${parseFloat(u.invested).toLocaleString()}</td>
+                            <td><button class="edit-btn" onclick="editUser(${u.id})">Edit</button></td>
+                        </tr>
+                    `).join('');
+                });
+
+            fetch('admin_api.php?action=getMessages')
+                .then(res => res.json())
+                .then(msgs => {
+                    const list = document.getElementById('messageList');
+                    list.innerHTML = msgs.map(m => `
+                        <div style="border: 1px solid #f1f5f9; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <strong>User: ${m.username}</strong>
+                                <span style="font-size: 0.8rem; color: #94a3b8;">${m.created_at}</span>
+                            </div>
+                            <p style="color: #475569;">${m.message}</p>
+                            <div style="margin-top: 1rem; text-align: right;">
+                                <button class="edit-btn" onclick="reply(${m.user_id})">Reply</button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function editUser(id) {
+            const bal = prompt("Enter new balance:");
+            const inv = prompt("Enter invested amount:");
+            if (bal === null || inv === null) return;
+
+            fetch('admin_api.php?action=updateUser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, balance: bal, invested: inv, vip: 0, credit_score: 100 })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("User updated!");
+                        loadData();
+                    }
+                });
+        }
+
+        function reply(userId) {
+            const msg = prompt("Enter your reply:");
+            if (!msg) return;
+
+            fetch('admin_api.php?action=replyMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, message: msg })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Reply sent!");
+                        loadData();
+                    }
+                });
+        }
+    </script>
+</body>
+
+</html>
